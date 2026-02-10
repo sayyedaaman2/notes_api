@@ -22,7 +22,8 @@ export function createNotes(req,res,next){
 }
 export function updateNotes(req,res,next){
     try{
-        if(!req.params.id){
+        let id = req.params.id;
+        if(!id){
             return res.status(400).send({
                 success : false,
                 message : "Id is not defined."
@@ -31,7 +32,7 @@ export function updateNotes(req,res,next){
         let {title,content, tags} = req.body;
 
         
-        let data = db.updateNote({title,content, tags})
+        let data = db.updateNote(Number(id),{title,content, tags})
         return res.status(201).send({
             message : "notes created successfully.",
             success : true,
@@ -44,14 +45,14 @@ export function updateNotes(req,res,next){
 
 export function deleteNotes(req,res,next){
     try{
-    
-        if(!req.params.id){
+        let id = req.params.id
+        if(!id){
             return res.status(400).send({
                 success : false,
                 message : "Id is not defined."
             })
         }
-        let data = db.deleteNote(req.params.id);
+        let data = db.deleteNote(Number(id));
         return res.status(200).send({
             message : "notes delete successfully.",
             success : true,
@@ -65,8 +66,9 @@ export function deleteNotes(req,res,next){
 export function fetchNotes(req,res,next){
     try{
         let data;
-        if(req.params.id){
-            data = db.getNotes(id);
+        const id = req.params.id;
+        if(id){
+            data = db.getNotes(Number(id));
         }else{
             data = db.getNotes();
         }

@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 
 import serverConfig from "./config/server.config.js";
+import rootRoutes from './routes/index.js'
 const app = express();
 
 //middlewares
@@ -15,6 +16,12 @@ app.get("/test", (req, res) => {
     message: "Testing API....",
   });
 });
+
+
+
+
+app.use(rootRoutes);
+
 app.use((err, req, res, next) => {
   const status = err.status || 500;
 
@@ -23,6 +30,8 @@ app.use((err, req, res, next) => {
     message: err.message || "Internal Server Error",
   });
 });
+
+
 
 app.listen(serverConfig.PORT, () => {
   console.log(`Server is running on port ${serverConfig.PORT}`);
