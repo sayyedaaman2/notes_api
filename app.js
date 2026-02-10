@@ -3,7 +3,6 @@ import express from "express";
 import cors from "cors";
 
 import serverConfig from "./config/server.config.js";
-
 const app = express();
 
 //middlewares
@@ -14,6 +13,14 @@ app.get("/test", (req, res) => {
   res.status(200).send({
     success: true,
     message: "Testing API....",
+  });
+});
+app.use((err, req, res, next) => {
+  const status = err.status || 500;
+
+  res.status(status).json({
+    success: false,
+    message: err.message || "Internal Server Error",
   });
 });
 
