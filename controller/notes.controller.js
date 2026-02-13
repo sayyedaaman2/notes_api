@@ -72,6 +72,12 @@ export function fetchNotes(req,res,next){
         }else{
             data = db.getNotes();
         }
+        if(!data){
+            return res.status(400).send({
+                message : "not found",
+                success : false
+            })
+        }
         return res.status(200).send({
             message : "notes fetched successfully.",
             success : true,

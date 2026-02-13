@@ -1,6 +1,8 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 
 import serverConfig from "./config/server.config.js";
 import rootRoutes from "./routes/index.js";
@@ -8,12 +10,46 @@ import logger from "./utility/logger.js";
 
 const app = express();
 
-/* -------------------- Core Middlewares -------------------- */
-app.use(cors());
+/* -------------------- Trust Proxy (IMPORTANT for prod) -------------------- */
+app.set("trust proxy", 1);
+
+/* -------------------- Core Security Middlewares -------------------- */
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "*", // restrict in production
+    credentials: true,
+  })
+);
+
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // API-only backend
+  })
+);
+
+/* -------------------- Body Parsers -------------------- */
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-/* -------------------- Request Logger (MUST be before routes) -------------------- */
+/* -------------------- Health/Test Route (NO rate limit) -------------------- */
+app.get("/test", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "API is healthy",
+  });
+});
+
+/* -------------------- Rate Limiting -------------------- */
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,                // per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(limiter);
+
+/* -------------------- Request Logger -------------------- */
 app.use((req, res, next) => {
   const start = Date.now();
 
@@ -30,14 +66,6 @@ app.use((req, res, next) => {
   next();
 });
 
-/* -------------------- Health/Test Route -------------------- */
-app.get("/test", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Testing API....",
-  });
-});
-
 /* -------------------- Routes -------------------- */
 app.use(rootRoutes);
 
@@ -52,6 +80,7 @@ app.use((req, res) => {
 /* -------------------- Global Error Handler -------------------- */
 app.use((err, req, res, next) => {
   const status = err.status || 500;
+  const isProd = process.env.NODE_ENV === "production";
 
   logger.error("Unhandled API error", {
     method: req.method,
@@ -63,7 +92,7 @@ app.use((err, req, res, next) => {
 
   res.status(status).json({
     success: false,
-    message: err.message || "Internal Server Error",
+    message: isProd ? "Internal Server Error" : err.message,
   });
 });
 
