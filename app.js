@@ -41,10 +41,18 @@ app.get("/test", (req, res) => {
 
 /* -------------------- Rate Limiting -------------------- */
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,                // per IP
-  standardHeaders: true,
-  legacyHeaders: false,
+  windowMs:15 * 60 * 1000,
+  max: 100,
+  handler: (req, res) => {
+    logger.warn("Rate limit exceeded", {
+      ip: req.ip,
+      path: req.originalUrl,
+    });
+
+    res.status(429).json({
+      error: "Too many requests",
+    });
+  },
 });
 
 app.use(limiter);
